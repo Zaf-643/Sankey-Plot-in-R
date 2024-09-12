@@ -1,0 +1,75 @@
+t1 <- sample(paste("Hosp", letters), size = 100, replace=TRUE)
+t2 <- sample(x = c("Male", "Female")   , size = 100, replace=TRUE)
+t3 <- floor(runif(100, min = 0, max = 110))
+t4 <- sample(x = c("Survived", "Died") , size = 100, replace=TRUE)
+t5  <- sample(paste("Facility ", letters), size = 100, replace=TRUE)
+
+View(t1)
+
+d <- data.frame(cbind(t1,t2,t3,t4, t5))
+names(d) <- c('Hospital', 'Gender', 'AgeYears', 'Outcome', 'Dischargeto')
+
+d$AgeYears <- as.integer(d$AgeYears)
+d$AgeGroup <- cut(d$AgeYears, 
+                  breaks = c(-Inf
+                             ,5 ,10 ,15,20,25,30,35,40,45,50,55,60 ,65,70,75,80,85
+                             , Inf), 
+                  
+                  labels = c("0-4 years"
+                             ,"5-9 years","10-14 years","15-19 years","20-24 years"
+                             ,"25-29 years","30-34 years","35-39 years","40-44 years"
+                             ,"45-49 years","50-54 years","55-59 years","60-64 years"
+                             ,"65-69 years","70-74 years","75-79 years","80-84 years"
+                             ,"85+ years"),
+                  right = FALSE)
+
+
+
+
+# Step 1
+df <- d %>%
+  make_long(Hospital, Gender,AgeGroup, Outcome,Dischargeto)
+
+# Step 2
+dagg <- df%>%
+  dplyr::group_by(node)%>%
+  tally()
+
+
+# Step 3
+df2 <- merge(df, dagg, by.x = 'node', by.y = 'node', all.x = TRUE)
+
+
+# Chart
+pl <- ggplot(df2, aes(x = x
+                      , next_x = next_x
+                      , node = node
+                      , next_node = next_node
+                      , fill = factor(node)
+                      , label = paste0(node," n=", n)
+)
+) 
+pl <- pl +geom_sankey(flow.alpha = 0.5, node.color = "black",show.legend = TRUE)
+pl <- pl +geom_sankey_text(size = 2, color = "blue", hjust = -0.5)
+#pl <- pl +geom_sankey_label(size = 2, color = "black", fill= "white", hjust = -0.1)
+pl <- pl +  theme_bw()
+pl <- pl + theme_sankey(base_size = 17) 
+pl <- pl + theme(legend.position = "none")
+pl <- pl + labs(title = "Sankey_plot")
+pl <- pl + labs(subtitle = "Exodus")
+pl <- pl + labs(caption = "break")
+pl <- pl + labs(fill = 'Nodes')
+
+pl <- pl +  theme(axis.title = element_blank()
+                  , axis.text.y = element_blank()
+                  , axis.ticks = element_blank()  
+                  , panel.grid = element_blank())
+pl <- pl + scale_fill_viridis_d(option = "inferno")
+
+pl <- pl + scale_fill_manual(values = c('Died'    = "black"
+                                        ,'Female'  ="red"
+                                        ,'Male'  = "green"
+                                      
+) )
+
+pl
